@@ -6,6 +6,9 @@ local M = {}
 local TICK_RATE = 10
 local EMPTY_TICKS_MAX = TICK_RATE * 10
 
+local OP_CODE_READY = 1
+local OP_CODE_GAME_STARTING = 2
+
 
 function M.match_init(_context, initial_state)
 	local is_private = false
@@ -30,15 +33,12 @@ end
 
 
 function M.match_join_attempt(_context, _dispatcher, _tick, state, presence, _metadata)
-	local accept = true
-	if #state.players >= state.required_player_count then
-		accept = false
-	end
+	local match_has_free_spot = state.player_count < state.required_player_count
+	local accept = match_has_free_spot
 
-	-- TODO: shouldn't below line be executed only if accept
-	-- is true? Maybe nakama doesn't update the state for
-	-- other players if join attempt failed
-	state.players[presence.user_id] = {presence = presence, is_ready = false}
+	if match_has_free_spot then
+		state.players[presence.user_id] = {presence = presence, is_ready = false}
+	end
 
 	return state, accept
 end
@@ -57,6 +57,13 @@ function M.match_join(_context, dispatcher, _tick, state, presences)
 	local label = nakama.json_encode({["is_private"] = state.is_private, ["player_count"] = state.player_count, ["required_player_count"] = state.required_player_count })
 	dispatcher.match_label_update(label)
 
+	-- Let joining players know about ready status of players in lobby.
+	for _, player in pairs(state.players) do
+		if player.is_ready then
+			dispatcher.broadcast_message(OP_CODE_READY, nakama.json_encode({["user_id"] = player.presence.user_id}))
+		end
+	end
+
 	return state
 end
 
@@ -71,7 +78,26 @@ function M.match_leave(_context, _dispatcher, _tick, state, presences)
 end
 
 
-function M.match_loop(_context, _dispatcher, _tick, state, _messages)
+function M.match_loop(_context, dispatcher, _tick, state, messages)
+	for _, message in ipairs(messages) do
+		if message.op_code == OP_CODE_READY then
+			state.players[message.sender.user_id].is_ready = true
+			dispatcher.broadcast_message(OP_CODE_READY, nakama.json_encode({["user_id"] = message.sender.user_id}))
+
+			local all_ready = true
+			for _, player in pairs(state.players) do
+				if player.is_ready == false then
+					all_ready = false
+				end
+			end
+
+			if all_ready and state.player_count == state.required_player_count then
+				state.game_state = IN_PROGRESS
+				dispatcher.broadcast_message(OP_CODE_GAME_STARTING)
+			end
+		end
+	end
+
 	if state.player_count == 0 then
 		state.empty_ticks = state.empty_ticks + 1
 	else
