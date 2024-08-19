@@ -14,6 +14,8 @@ function M.match_init(_context, params)
 		players = {},
 		player_count = 0,
 		player_count_max = 2,
+		match_config = params.match_config,
+		host_username = params.host_username,
 		is_private = false,
 		empty_ticks = 0
 	}
@@ -22,7 +24,8 @@ function M.match_init(_context, params)
 		["is_private"] = state.is_private,
 		["player_count"] = state.player_count,
 		["player_count_max"] = state.player_count_max,
-		["match_config"] = params.match_config
+		["match_config"] = state.match_config,
+		["host_username"] = state.host_username
 	})
 
 	return state, TICK_RATE, label
@@ -50,7 +53,9 @@ function M.match_join(_context, dispatcher, _tick, state, presences)
 	local label = nakama.json_encode({
 		["is_private"] = state.is_private,
 		["player_count"] = state.player_count,
-		["player_count_max"] = state.player_count_max
+		["player_count_max"] = state.player_count_max,
+		["match_config"] = state.match_config,
+		["host_username"] = state.host_username
 	})
 	dispatcher.match_label_update(label)
 
