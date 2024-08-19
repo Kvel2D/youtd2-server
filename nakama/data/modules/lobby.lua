@@ -9,25 +9,20 @@ local EMPTY_TICKS_MAX = TICK_RATE * 10
 local OP_CODE_TRANSFER_FROM_LOBBY = 3
 
 
-function M.match_init(_context, initial_state)
-	local is_private = false
-
-	if initial_state.is_private then
-		is_private = initial_state.is_private
-	end
-
+function M.match_init(_context, params)
 	local state = {
 		players = {},
 		player_count = 0,
 		player_count_max = 2,
-		is_private = is_private,
+		is_private = false,
 		empty_ticks = 0
 	}
 
 	local label = nakama.json_encode({
 		["is_private"] = state.is_private,
 		["player_count"] = state.player_count,
-		["player_count_max"] = state.player_count_max
+		["player_count_max"] = state.player_count_max,
+		["match_config"] = params.match_config
 	})
 
 	return state, TICK_RATE, label

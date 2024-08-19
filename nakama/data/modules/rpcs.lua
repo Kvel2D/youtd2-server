@@ -2,16 +2,16 @@
 local nakama = require("nakama")
 
 
-nakama.register_rpc(function(_context, _payload)
-	local is_private = false
+nakama.register_rpc(function(_context, payload)
+	local payload_json = nakama.json_decode(payload)
+	local match_config = payload_json["match_config"]
 
-	-- local data = nakama.json_decode(payload)
-	-- if data["is_private"] then
-	-- 	is_private = true
-	-- end
+	local match_params = {
+		["match_config"] = match_config
+	}
 
 	-- NOTE: match name must be the same as the name of the
-	-- match handler lua module
-	local match_id = nakama.match_create("lobby", { is_private = is_private })
+	-- match handler lua module (lobby.lua)
+	local match_id = nakama.match_create("lobby", match_params)
 	return nakama.json_encode({ ["match_id"] = match_id })
 end, "create_match")
