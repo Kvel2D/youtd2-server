@@ -6,7 +6,7 @@ local M = {}
 local TICK_RATE = 10
 local EMPTY_TICKS_MAX = TICK_RATE * 10
 
-local OP_CODE_TRANSFER_FROM_LOBBY = 3
+local OP_CODE_TRANSFER_FROM_LOBBY = 1
 
 
 local function copy_table(table)
