@@ -2,18 +2,18 @@
 local nakama = require("nakama")
 
 
+-- NOTE: match name passed to match_create() must be the
+-- same as the name of the match handler script
+-- (lobby.lua)
 nakama.register_rpc(function(_context, payload)
-	local payload_json = nakama.json_decode(payload)
-	local match_config = payload_json["match_config"]
-	local host_username = payload_json["host_username"]
-
-	local match_params = {
-		["match_config"] = match_config,
-		["host_username"] = host_username,
-	}
-
-	-- NOTE: match name must be the same as the name of the
-	-- match handler lua module (lobby.lua)
+	local match_params = nakama.json_decode(payload)
+	match_params = match_params or {}
 	local match_id = nakama.match_create("lobby", match_params)
-	return nakama.json_encode({ ["match_id"] = match_id })
+
+	local return_value_table = {
+		match_id = match_id
+	}
+	local return_value = nakama.json_encode(return_value_table)
+
+	return return_value
 end, "create_match")

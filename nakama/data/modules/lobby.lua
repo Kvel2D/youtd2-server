@@ -9,24 +9,29 @@ local EMPTY_TICKS_MAX = TICK_RATE * 10
 local OP_CODE_TRANSFER_FROM_LOBBY = 3
 
 
+local function copy_table(table)
+	local table_copy = {}
+
+	for k, v in pairs(table) do
+		table_copy[k] = v
+	end
+
+	return table_copy
+end
+
+
 function M.match_init(_context, params)
+	local label_table = copy_table(params)
+	label_table.player_count = 0
+	local label = nakama.json_encode(label_table)
+
 	local state = {
 		players = {},
 		player_count = 0,
-		player_count_max = 2,
-		match_config = params.match_config,
-		host_username = params.host_username,
-		is_private = false,
-		empty_ticks = 0
+		player_count_max = params.player_count_max or 2,
+		empty_ticks = 0,
+		original_label = label_table
 	}
-
-	local label = nakama.json_encode({
-		["is_private"] = state.is_private,
-		["player_count"] = state.player_count,
-		["player_count_max"] = state.player_count_max,
-		["match_config"] = state.match_config,
-		["host_username"] = state.host_username
-	})
 
 	return state, TICK_RATE, label
 end
@@ -50,13 +55,11 @@ function M.match_join(_context, dispatcher, _tick, state, presences)
 		state.player_count = state.player_count + 1
 	end
 
-	local label = nakama.json_encode({
-		["is_private"] = state.is_private,
-		["player_count"] = state.player_count,
-		["player_count_max"] = state.player_count_max,
-		["match_config"] = state.match_config,
-		["host_username"] = state.host_username
-	})
+-- 	Update player count in label, other values remain the
+-- 	same
+	local label_table = copy_table(state.original_label)
+	label_table.player_count = state.player_count
+	local label = nakama.json_encode(label_table)
 	dispatcher.match_label_update(label)
 
 	return state
