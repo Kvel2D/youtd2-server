@@ -41,7 +41,7 @@ end
 function M.match_join_attempt(_context, _dispatcher, _tick, state, presence, _metadata)
 	local accept = true
 
-	if not state.lobby_closed then
+	if state.lobby_closed then
 		accept = false
 	end
 
