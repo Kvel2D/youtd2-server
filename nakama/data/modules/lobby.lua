@@ -30,7 +30,8 @@ function M.match_init(_context, params)
 		player_count = 0,
 		player_count_max = params.player_count_max or 2,
 		empty_ticks = 0,
-		original_label = label_table
+		original_label = label_table,
+		lobby_closed = false
 	}
 
 	return state, TICK_RATE, label
@@ -38,8 +39,16 @@ end
 
 
 function M.match_join_attempt(_context, _dispatcher, _tick, state, presence, _metadata)
+	local accept = true
+
+	if not state.lobby_closed then
+		accept = false
+	end
+
 	local match_has_free_spot = state.player_count < state.player_count_max
-	local accept = match_has_free_spot
+	if not match_has_free_spot then
+		accept = false
+	end
 
 	if match_has_free_spot then
 		state.players[presence.user_id] = {presence = presence}
@@ -79,6 +88,8 @@ end
 function M.match_loop(_context, dispatcher, _tick, state, messages)
 	for _, message in ipairs(messages) do
 		if message.op_code == OP_CODE_TRANSFER_FROM_LOBBY then
+			state.lobby_closed = true
+
 			dispatcher.broadcast_message(OP_CODE_TRANSFER_FROM_LOBBY, message.data)
 		end
 	end
