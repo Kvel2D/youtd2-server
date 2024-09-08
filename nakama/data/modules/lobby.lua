@@ -81,6 +81,12 @@ function M.match_leave(_context, _dispatcher, _tick, state, presences)
 		state.player_count = state.player_count - 1
 	end
 
+-- 	Close the lobby when all players leave, to prevent
+-- 	players from joining empty lobby.
+	if state.player_count == 0 then
+		state.lobby_closed = true
+	end
+
 	return state
 end
 
