@@ -75,11 +75,16 @@ function M.match_join(_context, dispatcher, _tick, state, presences)
 end
 
 
-function M.match_leave(_context, _dispatcher, _tick, state, presences)
+function M.match_leave(_context, dispatcher, _tick, state, presences)
 	for _, presence in ipairs(presences) do
 		state.players[presence.user_id] = nil
 		state.player_count = state.player_count - 1
 	end
+
+	local label_table = copy_table(state.original_label)
+	label_table.player_count = state.player_count
+	local label = nakama.json_encode(label_table)
+	dispatcher.match_label_update(label)
 
 -- 	Close the lobby when all players leave, to prevent
 -- 	players from joining empty lobby.
